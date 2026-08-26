@@ -40,19 +40,12 @@ class _ScanQrPageState extends State<ScanQrPage> {
         controller: cameraController,
         onDetect: (BarcodeCapture capture) {
           if (_isScanCompleted) return;
-          
+
           final List<Barcode> barcodes = capture.barcodes;
           for (final barcode in barcodes) {
-            if (barcode.rawValue != null) {
+            if (barcode.rawValue != null && barcode.rawValue!.isNotEmpty) {
               _isScanCompleted = true;
               final String qrCode = barcode.rawValue!;
-              
-              print('Hasil QR Terbaca: $qrCode');
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Tagihan Terdeteksi: $qrCode')),
-              );
-              
               Navigator.pop(context, qrCode);
               break;
             }

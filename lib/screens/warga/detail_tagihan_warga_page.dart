@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/formatters.dart';
 
 class DetailTagihanWargaPage extends StatelessWidget {
   final Map<String, dynamic> tagihan;
@@ -8,9 +9,7 @@ class DetailTagihanWargaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Tagihan'),
-      ),
+      appBar: AppBar(title: const Text('Detail Tagihan')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -25,22 +24,37 @@ class DetailTagihanWargaPage extends StatelessWidget {
                     const Text('Total Tagihan', style: TextStyle(fontSize: 16)),
                     const SizedBox(height: 8),
                     Text(
-                      'Rp ${tagihan['nominal']}',
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue),
+                      AppFormatters.formatRupiah(tagihan['nominal']),
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    Text('Bulan: ${tagihan['bulan']} | Tahun: ${tagihan['tahun']}'),
+                    Text(
+                      'Bulan: ${tagihan['bulan']} | Tahun: ${tagihan['tahun']}',
+                    ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: tagihan['status'] == 'belum_bayar' ? Colors.orange.shade100 : Colors.green.shade100,
+                        color: tagihan['status'] == 'belum_bayar'
+                            ? Colors.orange.shade100
+                            : Colors.green.shade100,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        tagihan['status'] == 'belum_bayar' ? 'Belum Dibayar' : 'Lunas',
+                        tagihan['status'] == 'belum_bayar'
+                            ? 'Belum Dibayar'
+                            : 'Lunas',
                         style: TextStyle(
-                          color: tagihan['status'] == 'belum_bayar' ? Colors.orange.shade800 : Colors.green.shade800,
+                          color: tagihan['status'] == 'belum_bayar'
+                              ? Colors.orange.shade800
+                              : Colors.green.shade800,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -67,7 +81,11 @@ class DetailTagihanWargaPage extends StatelessWidget {
                         width: 200,
                         height: 200,
                         color: Colors.grey.shade200,
-                        child: const Icon(Icons.qr_code_2, size: 150, color: Colors.black87),
+                        child: const Icon(
+                          Icons.qr_code_2,
+                          size: 150,
+                          color: Colors.black87,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -81,7 +99,11 @@ class DetailTagihanWargaPage extends StatelessWidget {
                       ElevatedButton.icon(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('QR Code berhasil disimpan ke Galeri! (Simulasi)')),
+                            const SnackBar(
+                              content: Text(
+                                'QR Code berhasil disimpan ke Galeri! (Simulasi)',
+                              ),
+                            ),
                           );
                         },
                         icon: const Icon(Icons.download),
@@ -91,7 +113,7 @@ class DetailTagihanWargaPage extends StatelessWidget {
                   ),
                 ),
               ),
-            ]
+            ],
           ],
         ),
       ),

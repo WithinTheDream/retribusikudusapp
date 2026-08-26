@@ -1,30 +1,37 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retribusikudusapp/main.dart';
+import 'package:retribusikudusapp/utils/formatters.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App smoke test loads SplashScreen and navigates', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the splash screen title is rendered initially.
+    expect(find.text('Retribusi Sampah Kudus'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Fast-forward the splash timer
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  group('AppFormatters Tests', () {
+    test('formatRupiah formats numeric and string values correctly', () {
+      expect(AppFormatters.formatRupiah(25000), 'Rp 25.000');
+      expect(AppFormatters.formatRupiah('50000'), 'Rp 50.000');
+      expect(AppFormatters.formatRupiah(0), 'Rp 0');
+      expect(AppFormatters.formatRupiah(null), 'Rp 0');
+    });
+
+    test('formatTanggal formats date strings correctly', () {
+      final date = DateTime(2026, 8, 26);
+      expect(AppFormatters.formatTanggal(date), contains('2026'));
+      expect(AppFormatters.formatTanggal('2026-08-26'), contains('2026'));
+      expect(AppFormatters.formatTanggal(null), '-');
+    });
   });
 }
