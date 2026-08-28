@@ -16,6 +16,8 @@ class DashboardPetugas extends StatefulWidget {
 
 class _DashboardPetugasState extends State<DashboardPetugas> {
   List<dynamic> tagihans = [];
+  bool hasAssignment = true;
+  String assignmentMessage = '';
   bool isLoading = true;
 
   @override
@@ -44,6 +46,8 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
         final data = json.decode(response.body);
         setState(() {
           tagihans = data['data'] ?? [];
+          hasAssignment = data['has_assignment'] ?? true;
+          assignmentMessage = data['message'] ?? '';
           isLoading = false;
         });
       } else {
@@ -163,38 +167,86 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: fetchTagihan,
-              child: tagihans.isEmpty
+              child: !hasAssignment
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [
-                        SizedBox(height: 120),
+                      children: [
+                        const SizedBox(height: 80),
                         Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                size: 64,
-                                color: Colors.green,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                'Semua Lunas!',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.location_off,
+                                  size: 70,
+                                  color: Colors.orange,
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Tidak ada tagihan yang belum lunas di wilayah Anda.',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Belum Ada Penugasan Wilayah',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  assignmentMessage.isNotEmpty
+                                      ? assignmentMessage
+                                      : 'Akun Anda belum memiliki penugasan wilayah penagihan.\nSilakan hubungi Admin Dinas untuk penugasan Kecamatan & Desa.',
+                                  style: const TextStyle(color: Colors.grey, height: 1.4),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    setState(() => isLoading = true);
+                                    fetchTagihan();
+                                  },
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Muat Ulang'),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     )
+                  : tagihans.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: const [
+                            SizedBox(height: 120),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    size: 64,
+                                    color: Colors.green,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'Semua Lunas!',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Tidak ada tagihan yang belum lunas di wilayah Anda.',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
                   : ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.only(bottom: 80, top: 8),
