@@ -266,6 +266,30 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       return;
     }
 
+    if (_latController.text.trim().isEmpty ||
+        _longController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Titik koordinat Latitude dan Longitude wajib diisi untuk navigasi petugas!',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (double.tryParse(_latController.text.trim()) == null ||
+        double.tryParse(_longController.text.trim()) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Format Latitude dan Longitude harus berupa angka desimal (Contoh: -6.8048, 110.8405)!',
+          ),
+        ),
+      );
+      return;
+    }
+
     if (_ktpImageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -620,8 +644,10 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
                               Expanded(
                                 child: TextField(
                                   controller: _latController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                                   decoration: const InputDecoration(
-                                    labelText: 'Latitude (Opsional)',
+                                    labelText: 'Latitude (Wajib)*',
+                                    hintText: 'Contoh: -6.8048',
                                     border: OutlineInputBorder(),
                                   ),
                                 ),
@@ -630,8 +656,10 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
                               Expanded(
                                 child: TextField(
                                   controller: _longController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: const InputDecoration(
-                                    labelText: 'Longitude (Opsional)',
+                                    labelText: 'Longitude (Wajib)*',
+                                    hintText: 'Contoh: 110.8405',
                                     border: OutlineInputBorder(),
                                   ),
                                 ),

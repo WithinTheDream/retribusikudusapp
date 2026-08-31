@@ -36,26 +36,27 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
   Future<void> _openGoogleMaps(dynamic wr) async {
     final lat = wr['latitude'] ?? wr['lat'];
     final lng = wr['longitude'] ?? wr['lokasi_long'];
-    final alamat = wr['alamat'] ?? '';
-    final desa = wr['desa']?['desa'] ?? '';
-    final kec = wr['kecamatan']?['kecamatan'] ?? '';
 
-    Uri url;
-    if (lat != null && lng != null && lat.toString().isNotEmpty && lng.toString().isNotEmpty) {
-      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
-    } else {
-      // Fallback menggunakan nama alamat lengkap di Kudus
-      final query = Uri.encodeComponent('$alamat, Desa $desa, Kec. $kec, Kudus, Jawa Tengah');
-      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+    if (lat == null || lng == null || lat.toString().isEmpty || lng.toString().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Titik koordinat Latitude & Longitude belum terdata untuk warga ini.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
     }
 
+    final Uri googleMapsUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membuka aplikasi peta.')),
+          const SnackBar(content: Text('Tidak dapat membuka aplikasi Google Maps.')),
         );
       }
     } catch (e) {
@@ -293,24 +294,28 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                   _buildDetailRow('Kecamatan', kec),
                   _buildDetailRow('Desa / Kelurahan', desa),
                   _buildDetailRow('Alamat Lengkap', '$alamat ${rt.isNotEmpty ? "RT $rt " : ""}${rw.isNotEmpty ? "RW $rw" : ""}'),
+                  _buildDetailRow('Titik Koordinat', hasCoordinates ? '${wr['latitude'] ?? wr['lat']}, ${wr['longitude'] ?? wr['lokasi_long']}' : 'Belum terdata'),
                   
                   const SizedBox(height: 14),
 
                   // Tombol Peta Google Maps
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: () => _openGoogleMaps(wr),
-                      icon: const Icon(Icons.location_on_outlined, color: Color(0xFF2563EB), size: 18),
+                      icon: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
                       label: Text(
-                        hasCoordinates ? 'Buka Titik Lokasi di Maps 📍' : 'Cari Alamat di Google Maps 📍',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                        hasCoordinates
+                            ? 'Navigasi Maps ke Koordinat 📍'
+                            : 'Titik Koordinat Belum Terdata ⚠️',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF93C5FD)),
-                        backgroundColor: const Color(0xFFEFF6FF),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: hasCoordinates ? const Color(0xFF2563EB) : const Color(0xFF94A3B8),
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
                       ),
                     ),
                   ),
@@ -342,19 +347,6 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
               ),
             ),
             const SizedBox(height: 10),
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.offline_bolt_outlined, size: 14, color: Color(0xFF64748B)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Mendukung transaksi offline jika tanpa sinyal internet',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
