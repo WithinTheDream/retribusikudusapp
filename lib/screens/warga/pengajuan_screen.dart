@@ -284,6 +284,13 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       return;
     }
 
+    if (_noHpController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nomor WhatsApp / HP wajib diisi!')),
+      );
+      return;
+    }
+
     // 2. Validasi & Parsing Single Coordinate Input
     final rawCoord = _koordinatController.text.trim();
     if (rawCoord.isEmpty) {
