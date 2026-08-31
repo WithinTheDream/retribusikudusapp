@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,8 +23,7 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
   final _alamatController = TextEditingController();
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
-  final _latController = TextEditingController();
-  final _longController = TextEditingController();
+  final _koordinatController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
   XFile? _ktpImageFile;
@@ -44,6 +44,19 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     super.initState();
     _loadUserInitialData();
     _fetchMasterData();
+  }
+
+  @override
+  void dispose() {
+    _nikController.dispose();
+    _namaLengkapController.dispose();
+    _noHpController.dispose();
+    _namaUsahaController.dispose();
+    _alamatController.dispose();
+    _rtController.dispose();
+    _rwController.dispose();
+    _koordinatController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserInitialData() async {
@@ -90,56 +103,44 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     if (!mounted) return;
     setState(() {
       _isLoadingMaster = false;
-      // Fallback data umum jika API master sedang tidak merespons
       if (_jenisRetribusis.isEmpty) {
         _jenisRetribusis = [
-          {'id': 1, 'nama': 'Rumah Tangga'},
+          {'id': 1, 'nama': 'Rumah Tinggal'},
           {'id': 2, 'nama': 'Komersial / Usaha'},
           {'id': 3, 'nama': 'Instansi / Industri'},
+        ];
+      }
+      if (_kecamatans.isEmpty) {
+        _kecamatans = [
+          {'id': 1, 'kecamatan': 'Kota Kudus'},
+          {'id': 2, 'kecamatan': 'Jati'},
+          {'id': 3, 'kecamatan': 'Bae'},
+          {'id': 4, 'kecamatan': 'Gebog'},
+          {'id': 5, 'kecamatan': 'Kaliwungu'},
+          {'id': 6, 'kecamatan': 'Dawe'},
+          {'id': 7, 'kecamatan': 'Mejobo'},
+          {'id': 8, 'kecamatan': 'Jekulo'},
+          {'id': 9, 'kecamatan': 'Undaan'},
         ];
       }
     });
   }
 
-  void _onKecamatanChanged(int? kecamatanId) {
+  Future<void> _fetchDesa(int kecamatanId) async {
     setState(() {
-      _selectedKecamatanId = kecamatanId;
-      _selectedDesaId = null;
       _desas = [];
+      _selectedDesaId = null;
     });
 
-    if (kecamatanId == null) return;
-
-    // Cari daftar desa dari data kecamatan yang sudah dimuat
-    final selectedKec = _kecamatans.firstWhere(
-      (k) => k['id'] == kecamatanId,
-      orElse: () => null,
-    );
-
-    if (selectedKec != null &&
-        selectedKec['desas'] != null &&
-        (selectedKec['desas'] as List).isNotEmpty) {
-      setState(() {
-        _desas = selectedKec['desas'];
-      });
-    } else {
-      // Fetch desa by kecamatan jika belum tersarang di data kecamatan
-      _fetchDesaByKecamatan(kecamatanId);
-    }
-  }
-
-  Future<void> _fetchDesaByKecamatan(int kecamatanId) async {
     try {
-      final res = await http.get(
+      final resDesa = await http.get(
         Uri.parse('${ApiClient.baseUrl}/master/desa/$kecamatanId'),
         headers: ApiClient.headers,
       );
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body)['data'] ?? [];
+      if (resDesa.statusCode == 200) {
+        final data = json.decode(resDesa.body)['data'] ?? [];
         if (mounted) {
-          setState(() {
-            _desas = data;
-          });
+          setState(() => _desas = data);
         }
       }
     } catch (_) {}
@@ -153,18 +154,14 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
         maxHeight: 1600,
         imageQuality: 85,
       );
-
       if (picked != null) {
-        setState(() {
-          _ktpImageFile = picked;
-        });
+        setState(() => _ktpImageFile = picked);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal memilih gambar: $e')));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memilih gambar: $e')),
+      );
     }
   }
 
@@ -176,21 +173,21 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 'Pilih Sumber Foto KTP',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               ListTile(
                 leading: const CircleAvatar(
-                  backgroundColor: Colors.green,
-                  child: Icon(Icons.camera_alt, color: Colors.white),
+                  backgroundColor: Color(0xFFE0F2FE),
+                  child: Icon(Icons.camera_alt, color: Color(0xFF0284C7)),
                 ),
-                title: const Text('Ambil dari Kamera'),
+                title: const Text('Buka Kamera', style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.camera);
@@ -198,10 +195,10 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
               ),
               ListTile(
                 leading: const CircleAvatar(
-                  backgroundColor: Colors.blue,
-                  child: Icon(Icons.photo_library, color: Colors.white),
+                  backgroundColor: Color(0xFFDCFCE7),
+                  child: Icon(Icons.photo_library, color: Color(0xFF16A34A)),
                 ),
-                title: const Text('Pilih dari Galeri'),
+                title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.gallery);
@@ -214,8 +211,30 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     );
   }
 
+  Future<void> _pasteCoordinateFromClipboard() async {
+    final data = await Clipboard.getData('text/plain');
+    if (data != null && data.text != null && data.text!.isNotEmpty) {
+      setState(() {
+        _koordinatController.text = data.text!.trim();
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Koordinat berhasil ditempel dari clipboard!'),
+          backgroundColor: Color(0xFF059669),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Clipboard kosong.')),
+      );
+    }
+  }
+
   Future<void> _submitPengajuan() async {
-    // Validasi Form
+    // 1. Validasi Form
     if (_nikController.text.trim().length != 16) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('NIK harus terdiri dari tepat 16 digit!')),
@@ -238,9 +257,9 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     }
 
     if (_selectedKecamatanId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Silakan pilih Kecamatan!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan pilih Kecamatan!')),
+      );
       return;
     }
 
@@ -258,33 +277,52 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       return;
     }
 
-    if (_rtController.text.trim().isEmpty ||
-        _rwController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('RT dan RW wajib diisi!')));
+    if (_rtController.text.trim().isEmpty || _rwController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('RT dan RW wajib diisi!')),
+      );
       return;
     }
 
-    if (_latController.text.trim().isEmpty ||
-        _longController.text.trim().isEmpty) {
+    // 2. Validasi & Parsing Single Coordinate Input
+    final rawCoord = _koordinatController.text.trim();
+    if (rawCoord.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Titik koordinat Latitude dan Longitude wajib diisi untuk navigasi petugas!',
-          ),
+          content: Text('Titik koordinat Latitude & Longitude wajib diisi untuk penugasan petugas!'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    if (double.tryParse(_latController.text.trim()) == null ||
-        double.tryParse(_longController.text.trim()) == null) {
+    List<String> parts = [];
+    if (rawCoord.contains(',')) {
+      parts = rawCoord.split(',');
+    } else if (rawCoord.contains(' ')) {
+      parts = rawCoord.split(RegExp(r'\s+'));
+    }
+
+    if (parts.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Format Latitude dan Longitude harus berupa angka desimal (Contoh: -6.8048, 110.8405)!',
-          ),
+          content: Text('Format koordinat tidak valid. Contoh format: -6.804825, 110.840660'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final latStr = parts[0].trim();
+    final longStr = parts[1].trim();
+    final latVal = double.tryParse(latStr);
+    final longVal = double.tryParse(longStr);
+
+    if (latVal == null || longVal == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nilai Latitude dan Longitude harus berupa angka desimal valid!'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
@@ -292,9 +330,7 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
 
     if (_ktpImageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan upload foto KTP terlebih dahulu!'),
-        ),
+        const SnackBar(content: Text('Silakan upload foto KTP terlebih dahulu!')),
       );
       return;
     }
@@ -312,22 +348,21 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
         if (token != null) 'Authorization': 'Bearer $token',
       });
 
-      // Field wajib sesuai validasi backend Laravel
       request.fields['nik'] = _nikController.text.trim();
       request.fields['nama_lengkap'] = _namaLengkapController.text.trim();
       request.fields['nama_usaha'] = _namaUsahaController.text.trim();
-      request.fields['jenis_retribusi_id'] = _selectedJenisRetribusiId
-          .toString();
+      request.fields['jenis_retribusi_id'] = _selectedJenisRetribusiId.toString();
       request.fields['kecamatan_id'] = _selectedKecamatanId.toString();
       request.fields['desa_id'] = _selectedDesaId.toString();
       request.fields['alamat'] = _alamatController.text.trim();
       request.fields['rt'] = _rtController.text.trim();
       request.fields['rw'] = _rwController.text.trim();
-      request.fields['lat'] = _latController.text.trim();
-      request.fields['lokasi_long'] = _longController.text.trim();
+      request.fields['lat'] = latVal.toString();
+      request.fields['lokasi_long'] = longVal.toString();
+      request.fields['koordinat'] = rawCoord;
       request.fields['no_hp'] = _noHpController.text.trim();
 
-      // Unggah Dokumen KTP dengan key dokumen[KTP] sesuai controller backend
+      // Unggah Dokumen KTP
       if (kIsWeb) {
         final bytes = await _ktpImageFile!.readAsBytes();
         request.files.add(
@@ -353,453 +388,431 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
 
       if (!mounted) return;
 
-      if ((response.statusCode == 200 || response.statusCode == 201) &&
-          data['success'] == true) {
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              data['message'] ??
-                  'Pengajuan berhasil dikirim! Menunggu verifikasi.',
-            ),
-            backgroundColor: Colors.green,
+            content: Text(data['message'] ?? 'Pengajuan berhasil dikirim! Menunggu verifikasi.'),
+            backgroundColor: const Color(0xFF059669),
           ),
         );
-        Navigator.pop(context, true); // Kembali dan refresh dashboard
+        Navigator.pop(context, true);
       } else {
-        // Tampilkan pesan error validasi yang detail jika ada
-        String errorMsg = data['message'] ?? 'Gagal mengirim pengajuan.';
-        if (data['errors'] != null && data['errors'] is Map) {
-          final errorsMap = data['errors'] as Map;
-          final errorList = errorsMap.values
-              .map((e) => e is List ? e.first : e.toString())
-              .toList();
-          errorMsg = errorList.join('\n');
+        String msg = data['message'] ?? 'Gagal memproses pengajuan';
+        if (data['errors'] != null) {
+          final errMap = data['errors'] as Map<String, dynamic>;
+          msg += ': ${errMap.values.map((e) => e.toString()).join(", ")}';
         }
-
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan jaringan: $e'), backgroundColor: Colors.red),
+      );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildStepHeader({required String step, required String title, required IconData icon}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFECFDF5),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFA7F3D0)),
+          ),
+          child: Icon(icon, color: const Color(0xFF059669), size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                step.toUpperCase(),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669), letterSpacing: 0.5),
+              ),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCardWrapper({required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pengajuan Retribusi')),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Pendaftaran Objek Retribusi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+        ),
+      ),
       body: _isLoadingMaster
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Memuat data wilayah & retribusi...'),
-                ],
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF059669)))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // CARD 1: IDENTITAS PEMOHON
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
+                  // Banner Info
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '1. Identitas Pemohon',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Icon(Icons.info_outline, color: Color(0xFF2563EB), size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Lengkapi formulir di bawah ini untuk pendaftaran wajib retribusi sampah resmi Kabupaten Kudus.',
+                            style: TextStyle(fontSize: 12.5, color: Color(0xFF1E40AF), height: 1.4),
                           ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _nikController,
-                            maxLength: 16,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'NIK KTP * (16 Digit)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.badge),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _namaLengkapController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nama Lengkap Pemohon *',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.person),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _noHpController,
-                            keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
-                              labelText: 'Nomor WhatsApp / HP',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.phone),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // CARD 2: JENIS RETRIBUSI & USAHA
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '2. Jenis Objek Retribusi',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                  // STEP 1: IDENTITAS PEMOHON
+                  _buildCardWrapper(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStepHeader(step: 'Langkah 1', title: 'Data Identitas Pemohon', icon: Icons.person_outline),
+                        const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                        TextField(
+                          controller: _nikController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 16,
+                          decoration: const InputDecoration(
+                            labelText: 'Nomor Induk Kependudukan (NIK)*',
+                            hintText: '16 digit sesuai KTP',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                            counterText: '',
                           ),
-                          const SizedBox(height: 16),
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedJenisRetribusiId,
-                            decoration: const InputDecoration(
-                              labelText: 'Pilih Jenis Retribusi *',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.category),
-                            ),
-                            items: _jenisRetribusis.map<DropdownMenuItem<int>>((
-                              item,
-                            ) {
-                              return DropdownMenuItem<int>(
-                                value: item['id'],
-                                child: Text(
-                                  item['nama'] ?? 'Jenis #${item['id']}',
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                _selectedJenisRetribusiId = val;
-                              });
-                            },
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _namaLengkapController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nama Lengkap Pemohon*',
+                            prefixIcon: Icon(Icons.person),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _namaUsahaController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nama Usaha / Toko (Opsional)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.storefront),
-                            ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _noHpController,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'Nomor WhatsApp / HP Aktif*',
+                            hintText: 'Contoh: 08123456789',
+                            prefixIcon: Icon(Icons.phone_android),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // CARD 3: LOKASI & WILAYAH
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '3. Alamat & Wilayah Penagihan',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                  // STEP 2: KATEGORI OBJEK RETRIBUSI
+                  _buildCardWrapper(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStepHeader(step: 'Langkah 2', title: 'Kategori Objek Retribusi', icon: Icons.category_outlined),
+                        const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                        DropdownButtonFormField<int>(
+                          initialValue: _selectedJenisRetribusiId,
+                          decoration: const InputDecoration(
+                            labelText: 'Pilih Jenis Objek Retribusi*',
+                            prefixIcon: Icon(Icons.home_work_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
-                          const SizedBox(height: 16),
-                          // Dropdown Kecamatan
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedKecamatanId,
-                            decoration: const InputDecoration(
-                              labelText: 'Kecamatan *',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.location_city),
-                            ),
-                            items: _kecamatans.map<DropdownMenuItem<int>>((
-                              item,
-                            ) {
-                              return DropdownMenuItem<int>(
-                                value: item['id'],
-                                child: Text(
-                                  item['kecamatan'] ??
-                                      'Kecamatan #${item['id']}',
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: _onKecamatanChanged,
+                          items: _jenisRetribusis.map<DropdownMenuItem<int>>((item) {
+                            return DropdownMenuItem<int>(
+                              value: item['id'],
+                              child: Text(item['nama'] ?? '-', overflow: TextOverflow.ellipsis),
+                            );
+                          }).toList(),
+                          onChanged: (val) => setState(() => _selectedJenisRetribusiId = val),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _namaUsahaController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nama Toko / Usaha (Opsional)',
+                            hintText: 'Isi jika objek berupa tempat usaha/kios',
+                            prefixIcon: Icon(Icons.storefront_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
-                          const SizedBox(height: 12),
-
-                          // Dropdown Desa
-                          DropdownButtonFormField<int>(
-                            key: ValueKey(_selectedKecamatanId),
-                            initialValue: _selectedDesaId,
-                            decoration: const InputDecoration(
-                              labelText: 'Desa / Kelurahan *',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.holiday_village),
-                            ),
-                            items: _desas.map<DropdownMenuItem<int>>((item) {
-                              return DropdownMenuItem<int>(
-                                value: item['id'],
-                                child: Text(
-                                  item['desa'] ?? 'Desa #${item['id']}',
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: _selectedKecamatanId == null
-                                ? null
-                                : (val) {
-                                    setState(() {
-                                      _selectedDesaId = val;
-                                    });
-                                  },
-                          ),
-                          const SizedBox(height: 12),
-
-                          TextField(
-                            controller: _alamatController,
-                            maxLines: 2,
-                            decoration: const InputDecoration(
-                              labelText: 'Alamat Lengkap / Jalan *',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.home),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _rtController,
-                                  maxLength: 3,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'RT * (cth: 01)',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _rwController,
-                                  maxLength: 3,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(
-                                    labelText: 'RW * (cth: 02)',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _latController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Latitude (Wajib)*',
-                                    hintText: 'Contoh: -6.8048',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextField(
-                                  controller: _longController,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Longitude (Wajib)*',
-                                    hintText: 'Contoh: 110.8405',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // CARD 4: FOTO DOKUMEN KTP
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '4. Upload Berkas Dokumen',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                  // STEP 3: ALAMAT & TITIK KOORDINAT LOKASI
+                  _buildCardWrapper(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStepHeader(step: 'Langkah 3', title: 'Alamat & Titik Koordinat', icon: Icons.location_on_outlined),
+                        const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                        DropdownButtonFormField<int>(
+                          initialValue: _selectedKecamatanId,
+                          decoration: const InputDecoration(
+                            labelText: 'Kecamatan*',
+                            prefixIcon: Icon(Icons.map_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Foto KTP Pemohon *',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
+                          items: _kecamatans.map<DropdownMenuItem<int>>((item) {
+                            return DropdownMenuItem<int>(
+                              value: item['id'],
+                              child: Text(item['kecamatan'] ?? '-', overflow: TextOverflow.ellipsis),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedKecamatanId = val);
+                              _fetchDesa(val);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        DropdownButtonFormField<int>(
+                          initialValue: _selectedDesaId,
+                          decoration: const InputDecoration(
+                            labelText: 'Desa / Kelurahan*',
+                            prefixIcon: Icon(Icons.holiday_village_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
-                          const SizedBox(height: 8),
-                          if (_ktpImageFile == null)
-                            OutlinedButton.icon(
-                              onPressed: _showImageSourceDialog,
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text(
-                                'Ambil Foto KTP (Kamera / Galeri)',
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                          items: _desas.map<DropdownMenuItem<int>>((item) {
+                            return DropdownMenuItem<int>(
+                              value: item['id'],
+                              child: Text(item['desa'] ?? '-', overflow: TextOverflow.ellipsis),
+                            );
+                          }).toList(),
+                          onChanged: _desas.isEmpty ? null : (val) => setState(() => _selectedDesaId = val),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _alamatController,
+                          maxLines: 2,
+                          decoration: const InputDecoration(
+                            labelText: 'Alamat Lengkap / Nama Jalan*',
+                            hintText: 'Contoh: Jl. Diponegoro No. 45',
+                            prefixIcon: Icon(Icons.home_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _rtController,
+                                keyboardType: TextInputType.number,
+                                maxLength: 3,
+                                decoration: const InputDecoration(
+                                  labelText: 'RT*',
+                                  hintText: '001',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                                  counterText: '',
                                 ),
-                                side: BorderSide(color: Colors.green.shade700),
                               ),
-                            )
-                          else
-                            Container(
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _rwController,
+                                keyboardType: TextInputType.number,
+                                maxLength: 3,
+                                decoration: const InputDecoration(
+                                  labelText: 'RW*',
+                                  hintText: '005',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                                  counterText: '',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // SINGLE COMBINED COORDINATE INPUT
+                        TextField(
+                          controller: _koordinatController,
+                          keyboardType: TextInputType.text,
+                          decoration: InputDecoration(
+                            labelText: 'Titik Koordinat Maps (Wajib)*',
+                            hintText: 'Contoh: -6.804825, 110.840660',
+                            prefixIcon: const Icon(Icons.pin_drop, color: Color(0xFFDC2626)),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.content_paste, color: Color(0xFF2563EB)),
+                              tooltip: 'Tempel dari Clipboard',
+                              onPressed: _pasteCoordinateFromClipboard,
+                            ),
+                            helperText: 'Cukup salin & tempel titik koordinat dari Google Maps',
+                            helperMaxLines: 2,
+                            helperStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
+                            border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // STEP 4: FOTO DOKUMEN KTP
+                  _buildCardWrapper(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStepHeader(step: 'Langkah 4', title: 'Upload Dokumen KTP', icon: Icons.upload_file),
+                        const Divider(height: 24, color: Color(0xFFF1F5F9)),
+                        if (_ktpImageFile == null)
+                          InkWell(
+                            onTap: _showImageSourceDialog,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.green),
+                                color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
                               ),
-                              padding: const EdgeInsets.all(12),
                               child: Column(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: kIsWeb
-                                        ? Image.network(
-                                            _ktpImageFile!.path,
-                                            height: 180,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Image.file(
-                                            File(_ktpImageFile!.path),
-                                            height: 180,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                          ),
+                                children: const [
+                                  CircleAvatar(
+                                    radius: 26,
+                                    backgroundColor: Color(0xFFE2E8F0),
+                                    child: Icon(Icons.add_a_photo_outlined, color: Color(0xFF475569), size: 26),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Pilih / Ambil Foto KTP',
+                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Format JPG/PNG, pastikan teks KTP terbaca jelas',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFA7F3D0)),
+                            ),
+                            child: Column(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                  child: kIsWeb
+                                      ? Image.network(_ktpImageFile!.path, height: 180, width: double.infinity, fit: BoxFit.cover)
+                                      : Image.file(File(_ktpImageFile!.path), height: 180, width: double.infinity, fit: BoxFit.cover),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF0FDF4),
+                                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+                                  ),
+                                  child: Row(
                                     children: [
-                                      Expanded(
+                                      const Icon(Icons.check_circle, color: Color(0xFF059669), size: 18),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
                                         child: Text(
-                                          _ktpImageFile!.name,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          'Foto KTP siap diunggah',
+                                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
                                         ),
                                       ),
                                       TextButton.icon(
                                         onPressed: _showImageSourceDialog,
                                         icon: const Icon(Icons.edit, size: 16),
-                                        label: const Text('Ganti'),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () => setState(
-                                          () => _ktpImageFile = null,
-                                        ),
+                                        label: const Text('Ganti', style: TextStyle(fontSize: 12)),
+                                        style: TextButton.styleFrom(foregroundColor: const Color(0xFF059669)),
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 8),
 
                   // SUBMIT BUTTON
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submitPengajuan,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: const Color(0xFF059669),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 2,
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          )
                         : const Text(
-                            'KIRIM PENGAJUAN RETRIBUSI',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            'KIRIM PENGAJUAN SEKARANG',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                           ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
