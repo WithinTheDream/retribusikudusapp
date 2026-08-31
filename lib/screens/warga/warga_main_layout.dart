@@ -13,12 +13,6 @@ class WargaMainLayout extends StatefulWidget {
 class _WargaMainLayoutState extends State<WargaMainLayout> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const BerandaWarga(),
-    DashboardWarga(), // Ini yang jadi menu "Retribusi"
-    const ProfilePage(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -27,22 +21,30 @@ class _WargaMainLayoutState extends State<WargaMainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> pages = [
+      BerandaWarga(onNavigateTab: _onItemTapped),
+      const DashboardWarga(),
+      const ProfilePage(),
+    ];
+
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: const Color(0xFF059669),
+        unselectedItemColor: const Color(0xFF94A3B8),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home_rounded),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long),
+            icon: Icon(Icons.receipt_long_rounded),
             label: 'Retribusi',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.person_rounded),
             label: 'Profil',
           ),
         ],

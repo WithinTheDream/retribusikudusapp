@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/api_client.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
 import 'settings_page.dart';
@@ -16,6 +19,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String _nama = '';
   String _role = '';
+  String _email = '';
+  bool _isWajibRetribusiActive = false;
+  bool _hasWajibRetribusiProfile = false;
+  bool _isLoadingStatus = true;
 
   @override
   void initState() {
@@ -25,10 +32,55 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
     setState(() {
       _nama = prefs.getString('nama') ?? 'Pengguna';
       _role = prefs.getString('role') ?? 'User';
     });
+
+    // Ambil status dari API jika user adalah warga
+    if (_role.toLowerCase() != 'petugas' && token != null) {
+      try {
+        final url = Uri.parse('${ApiClient.baseUrl}/warga/dashboard');
+        final response = await http.get(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ).timeout(const Duration(seconds: 6));
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final profil = data['data']?['profil'];
+          if (mounted) {
+            setState(() {
+              if (profil != null) {
+                _hasWajibRetribusiProfile = true;
+                _isWajibRetribusiActive = (profil['status_aktif'] == true || profil['status_aktif'] == 1);
+                _email = profil['user']?['email'] ?? '';
+              } else {
+                _hasWajibRetribusiProfile = false;
+                _isWajibRetribusiActive = false;
+              }
+              _isLoadingStatus = false;
+            });
+          }
+        } else {
+          if (mounted) setState(() => _isLoadingStatus = false);
+        }
+      } catch (_) {
+        if (mounted) setState(() => _isLoadingStatus = false);
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoadingStatus = false;
+          _isWajibRetribusiActive = true; // Petugas default aktif jika bisa login
+        });
+      }
+    }
   }
 
   void _handleLogout() async {
@@ -46,31 +98,34 @@ class _ProfilePageState extends State<ProfilePage> {
     final isPetugas = _role.toLowerCase() == 'petugas';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil Saya')),
+      backgroundColor: const Color(0xFFF8FAF9),
+      appBar: AppBar(
+        title: const Text('Profil Saya', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // Header Card Identitas
+          // Header Card Identitas & Status
           Card(
-            elevation: 3,
+            elevation: 2,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
+              side: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
+            color: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 20.0),
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 42,
-                    backgroundColor: isPetugas
-                        ? Colors.green.shade100
-                        : Colors.blue.shade100,
+                    backgroundColor: isPetugas ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
                     child: Icon(
                       isPetugas ? Icons.badge : Icons.person,
                       size: 48,
-                      color: isPetugas
-                          ? Colors.green.shade800
-                          : Colors.blue.shade800,
+                      color: isPetugas ? const Color(0xFF059669) : const Color(0xFF2563EB),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -79,38 +134,105 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 4,
+                  Text(
+                    isPetugas ? 'Petugas Lapangan Kudus' : (_email.isNotEmpty ? _email : 'Wajib Retribusi Warga'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
                     ),
-                    decoration: BoxDecoration(
-                      color: isPetugas
-                          ? Colors.green.shade50
-                          : Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isPetugas
-                            ? Colors.green.shade300
-                            : Colors.blue.shade300,
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Role & Status Badges
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      // Role Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isPetugas ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isPetugas ? const Color(0xFFA7F3D0) : const Color(0xFFBFDBFE),
+                          ),
+                        ),
+                        child: Text(
+                          isPetugas ? 'PETUGAS LAPANGAN' : 'WAJIB RETRIBUSI',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isPetugas ? const Color(0xFF047857) : const Color(0xFF1D4ED8),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      isPetugas
-                          ? 'PETUGAS LAPANGAN'
-                          : 'WAJIB RETRIBUSI (WARGA)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isPetugas
-                            ? Colors.green.shade800
-                            : Colors.blue.shade800,
-                      ),
-                    ),
+
+                      // Status Aktif / Inaktif Pill
+                      if (_isLoadingStatus)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text('Memuat...', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        )
+                      else if (isPetugas || (_hasWajibRetribusiProfile && _isWajibRetribusiActive))
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFECFDF5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFA7F3D0)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.check_circle, color: Color(0xFF059669), size: 13),
+                              SizedBox(width: 4),
+                              Text(
+                                'STATUS: AKTIF',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF047857),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFFECDD3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.cancel, color: Color(0xFFDC2626), size: 13),
+                              SizedBox(width: 4),
+                              Text(
+                                'STATUS: BELUM AKTIF',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFB91C1C),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -123,23 +245,30 @@ class _ProfilePageState extends State<ProfilePage> {
             elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
+            color: Colors.white,
             child: Column(
               children: [
                 if (!isPetugas) ...[
                   ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFFE8F5E9),
-                      child: Icon(Icons.assignment, color: Colors.green),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFECFDF5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.assignment_outlined, color: Color(0xFF059669), size: 20),
                     ),
                     title: const Text(
                       'Status Pengajuan Retribusi',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
                     ),
                     subtitle: const Text(
-                      'Cek persetujuan objek retribusi Anda',
+                      'Cek persetujuan pendaftaran objek retribusi Anda',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF94A3B8)),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -149,19 +278,23 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     },
                   ),
-                  const Divider(height: 1),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ],
                 ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFE3F2FD),
-                    child: Icon(Icons.settings, color: Colors.blue),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEFF6FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.settings_outlined, color: Color(0xFF2563EB), size: 20),
                   ),
                   title: const Text(
                     'Pengaturan Akun',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
                   ),
-                  subtitle: const Text('Ubah sandi, notifikasi & informasi'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  subtitle: const Text('Ubah sandi, notifikasi & informasi', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF94A3B8)),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -171,18 +304,22 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFFFF3E0),
-                    child: Icon(Icons.help_outline, color: Colors.orange),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFFBEB),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.help_outline, color: Color(0xFFD97706), size: 20),
                   ),
                   title: const Text(
                     'Pusat Bantuan & FAQ',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF1E293B)),
                   ),
-                  subtitle: const Text('Kontak dinas PKPLH & tanya jawab'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  subtitle: const Text('Kontak dinas PKPLH & tanya jawab', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF94A3B8)),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -192,24 +329,29 @@ class _ProfilePageState extends State<ProfilePage> {
                     );
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Color(0xFFFFEBEE),
-                    child: Icon(Icons.logout, color: Colors.red),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEF2F2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 20),
                   ),
                   title: const Text(
                     'Keluar dari Akun',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.red,
+                      fontSize: 14,
+                      color: Color(0xFFDC2626),
                     ),
                   ),
-                  subtitle: const Text('Logout sesi dari perangkat ini'),
+                  subtitle: const Text('Logout sesi dari perangkat ini', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.red,
+                    size: 14,
+                    color: Color(0xFFDC2626),
                   ),
                   onTap: () {
                     showDialog(
@@ -226,7 +368,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor: const Color(0xFFDC2626),
                               foregroundColor: Colors.white,
                             ),
                             onPressed: () {
