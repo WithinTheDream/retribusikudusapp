@@ -177,24 +177,24 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF059669)))
           : !hasAssignment
               ? _buildNoAssignmentState()
-              : Column(
-                  children: [
-                    // Header Filter & Search Box
-                    _buildFilterAndSearchSection(),
+              : tagihans.isEmpty
+                  ? _buildAllPaidState()
+                  : Column(
+                      children: [
+                        // Header Filter & Search Box
+                        _buildFilterAndSearchSection(),
 
-                    // Body List Tagihan Grouped by Desa
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: fetchTagihan,
-                        child: tagihans.isEmpty
-                            ? _buildAllPaidState()
-                            : filteredTagihans.isEmpty
+                        // Body List Tagihan Grouped by Desa
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: fetchTagihan,
+                            child: filteredTagihans.isEmpty
                                 ? _buildEmptySearchResult()
                                 : _buildGroupedTagihanList(),
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
     );
   }
 
@@ -510,65 +510,119 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
   }
 
   Widget _buildEmptySearchResult() {
-    return ListView(
+    return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      children: const [
-        SizedBox(height: 80),
-        Center(
-          child: Column(
-            children: [
-              Icon(Icons.search_off_rounded, size: 60, color: Color(0xFF94A3B8)),
-              SizedBox(height: 12),
-              Text(
-                'Tidak Ada Tagihan yang Cocok',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Coba ubah kata kunci pencarian atau filter desa.',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
-              ),
-            ],
-          ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.search_off_rounded, size: 54, color: Color(0xFF94A3B8)),
+            SizedBox(height: 12),
+            Text(
+              'Tidak Ada Tagihan yang Cocok',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Coba ubah kata kunci pencarian atau filter desa.',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildAllPaidState() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: const [
-        SizedBox(height: 80),
-        Center(
+    return RefreshIndicator(
+      onRefresh: fetchTagihan,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.check_circle_outline, size: 70, color: Color(0xFF10B981)),
-              SizedBox(height: 16),
-              Text(
-                'Semua Tagihan Lunas!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              // Banner info wilayah
+              if (kecamatanName.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.location_on, color: Color(0xFF059669), size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Wilayah Penugasan: Kec. $kecamatanName',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF065F46),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFA7F3D0), width: 2),
+                ),
+                child: const Icon(Icons.check_circle_outline, size: 64, color: Color(0xFF059669)),
               ),
-              SizedBox(height: 8),
-              Text(
-                'Tidak ada tagihan tertunggak di wilayah penugasan Anda.',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              const SizedBox(height: 20),
+              const Text(
+                'Semua Tagihan Lunas!',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Tidak ada tagihan yang tertunggak di wilayah penugasan Anda saat ini.',
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.4),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() => isLoading = true);
+                  fetchTagihan();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Perbarui Data Tagihan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildNoAssignmentState() {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.assignment_late_outlined, size: 70, color: Color(0xFFD97706)),
+            const Icon(Icons.assignment_late_outlined, size: 64, color: Color(0xFFD97706)),
             const SizedBox(height: 16),
             const Text(
               'Belum Ada Penugasan Wilayah',
@@ -592,6 +646,8 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF059669),
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ],

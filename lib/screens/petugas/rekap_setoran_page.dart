@@ -89,13 +89,27 @@ class _RekapSetoranPageState extends State<RekapSetoranPage> {
       if (!mounted) return;
 
       if (response.statusCode == 200 && data['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Setoran Berhasil Dikirim')),
+          const SnackBar(
+            content: Text('✓ Setoran berhasil dikirim ke Bendahara!'),
+            backgroundColor: Color(0xFF059669),
+            duration: Duration(seconds: 3),
+          ),
         );
-        Navigator.pop(context); // Kembali
+        setState(() {
+          isSubmitting = false;
+        });
+        fetchRekap(); // Refresh data agar kembali ke state kosong
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context, true);
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Gagal mengirim setoran')),
+          SnackBar(
+            content: Text(data['message'] ?? 'Gagal mengirim setoran'),
+            backgroundColor: Colors.red,
+          ),
         );
         setState(() {
           isSubmitting = false;
