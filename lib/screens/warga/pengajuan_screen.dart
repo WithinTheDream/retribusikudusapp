@@ -692,7 +692,7 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
                           controller: _koordinatController,
                           keyboardType: TextInputType.text,
                           decoration: InputDecoration(
-                            labelText: 'Titik Koordinat Maps (Wajib)*',
+                            labelText: 'Titik Koordinat Maps*',
                             hintText: 'Contoh: -6.804825, 110.840660',
                             prefixIcon: const Icon(Icons.pin_drop, color: Color(0xFFDC2626)),
                             suffixIcon: IconButton(
