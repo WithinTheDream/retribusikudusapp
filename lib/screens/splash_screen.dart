@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'public/public_beranda.dart';
+import 'auth/login_screen.dart';
 import 'petugas/petugas_main_layout.dart';
 import 'warga/warga_main_layout.dart';
 
@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const PublicBeranda()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
   }
