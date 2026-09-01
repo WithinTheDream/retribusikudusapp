@@ -20,6 +20,8 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
   final _namaLengkapController = TextEditingController();
   final _noHpController = TextEditingController();
   final _namaUsahaController = TextEditingController();
+  final _npwpController = TextEditingController();
+  final _nibController = TextEditingController();
   final _alamatController = TextEditingController();
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
@@ -52,6 +54,8 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     _namaLengkapController.dispose();
     _noHpController.dispose();
     _namaUsahaController.dispose();
+    _npwpController.dispose();
+    _nibController.dispose();
     _alamatController.dispose();
     _rtController.dispose();
     _rwController.dispose();
@@ -358,6 +362,8 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       request.fields['nik'] = _nikController.text.trim();
       request.fields['nama_lengkap'] = _namaLengkapController.text.trim();
       request.fields['nama_usaha'] = _namaUsahaController.text.trim();
+      request.fields['npwp'] = _npwpController.text.trim();
+      request.fields['nib'] = _nibController.text.trim();
       request.fields['jenis_retribusi_id'] = _selectedJenisRetribusiId.toString();
       request.fields['kecamatan_id'] = _selectedKecamatanId.toString();
       request.fields['desa_id'] = _selectedDesaId.toString();
@@ -396,13 +402,7 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       if (!mounted) return;
 
       if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['message'] ?? 'Pengajuan berhasil dikirim! Menunggu verifikasi.'),
-            backgroundColor: const Color(0xFF059669),
-          ),
-        );
-        Navigator.pop(context, true);
+        _showSuccessPengajuanDialog(data['message'] ?? 'Pengajuan berhasil dikirim! Menunggu verifikasi.');
       } else {
         String msg = data['message'] ?? 'Gagal memproses pengajuan';
         if (data['errors'] != null) {
@@ -421,6 +421,100 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showSuccessPengajuanDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // SweetAlert style success badge
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFA7F3D0),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      size: 40,
+                      color: Color(0xFF059669),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Pengajuan Terkirim! 🎉',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message.isNotEmpty
+                      ? message
+                      : 'Permohonan pendaftaran wajib retribusi Anda berhasil dikirim dan sedang menunggu verifikasi dari admin.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      Navigator.pop(context, true);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF059669),
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shadowColor: const Color(0xFF059669).withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'SELESAI',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildStepHeader({required String step, required String title, required IconData icon}) {
@@ -592,6 +686,26 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
                             labelText: 'Nama Toko / Usaha (Opsional)',
                             hintText: 'Isi jika objek berupa tempat usaha/kios',
                             prefixIcon: Icon(Icons.storefront_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _npwpController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nomor Pokok Wajib Pajak / NPWP (Opsional)',
+                            hintText: 'Contoh: 01.234.567.8-901.000',
+                            prefixIcon: Icon(Icons.receipt_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _nibController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nomor Induk Berusaha / NIB (Opsional)',
+                            hintText: 'Contoh: 1234567890123',
+                            prefixIcon: Icon(Icons.business_center_outlined),
                             border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
                         ),
