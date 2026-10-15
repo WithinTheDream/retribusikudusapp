@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_petugas.dart';
+import 'rute_tps_page.dart';
 import 'rekap_setoran_page.dart';
 import '../profile/profile_page.dart';
 import '../../utils/database_helper.dart';
@@ -17,6 +18,7 @@ class _PetugasMainLayoutState extends State<PetugasMainLayout> {
 
   final List<Widget> _pages = [
     const DashboardPetugas(),
+    const RuteTpsPage(),
     const RekapSetoranPage(),
     const ProfilePage(),
   ];
@@ -65,6 +67,10 @@ class _PetugasMainLayoutState extends State<PetugasMainLayout> {
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long_rounded),
             label: 'Tagihan',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.alt_route_rounded),
+            label: 'Rute TPS',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet_rounded),

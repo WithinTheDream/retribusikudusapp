@@ -81,25 +81,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (response.statusCode == 200 && data['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: const [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 10),
-                Expanded(child: Text('Registrasi Berhasil! Silakan Login.')),
-              ],
-            ),
-            backgroundColor: const Color(0xFF059669),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
+        _showSuccessDialog(data['message'] ?? 'Akun Anda berhasil didaftarkan. Silakan login untuk mengajukan retribusi.');
       } else {
         String msg = data['message'] ?? 'Gagal melakukan registrasi';
         if (data['errors'] != null) {
@@ -108,9 +91,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(msg),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(child: Text(msg)),
+              ],
+            ),
             backgroundColor: const Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -119,12 +109,118 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Terjadi kesalahan jaringan: $e'),
+          content: Row(
+            children: [
+              const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Terjadi kesalahan jaringan: $e')),
+            ],
+          ),
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated green circle badge with check icon (SweetAlert style)
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFA7F3D0),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      size: 40,
+                      color: Color(0xFF059669),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Registrasi Berhasil! 🎉',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message.isNotEmpty
+                      ? message
+                      : 'Akun Warga Anda telah berhasil didaftarkan. Silakan masuk untuk mengajukan layanan retribusi.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF059669),
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shadowColor: const Color(0xFF059669).withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'MASUK KE AKUN',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildInputField({

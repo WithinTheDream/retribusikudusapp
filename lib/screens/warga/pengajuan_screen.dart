@@ -3,10 +3,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api_client.dart';
+import 'map_picker_page.dart';
 
 class PengajuanScreen extends StatefulWidget {
   const PengajuanScreen({super.key});
@@ -20,10 +23,13 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
   final _namaLengkapController = TextEditingController();
   final _noHpController = TextEditingController();
   final _namaUsahaController = TextEditingController();
+  final _npwpController = TextEditingController();
+  final _nibController = TextEditingController();
   final _alamatController = TextEditingController();
   final _rtController = TextEditingController();
   final _rwController = TextEditingController();
   final _koordinatController = TextEditingController();
+  LatLng? _pinnedLocation;
 
   final ImagePicker _picker = ImagePicker();
   XFile? _ktpImageFile;
@@ -52,6 +58,8 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     _namaLengkapController.dispose();
     _noHpController.dispose();
     _namaUsahaController.dispose();
+    _npwpController.dispose();
+    _nibController.dispose();
     _alamatController.dispose();
     _rtController.dispose();
     _rwController.dispose();
@@ -211,11 +219,61 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     );
   }
 
+  Future<void> _openMapPicker() async {
+    LatLng initialPoint = _pinnedLocation ?? const LatLng(-6.804825, 110.840660);
+    if (_koordinatController.text.isNotEmpty) {
+      final parts = _koordinatController.text.split(RegExp(r'[, ]+'));
+      if (parts.length >= 2) {
+        final lat = double.tryParse(parts[0]);
+        final lng = double.tryParse(parts[1]);
+        if (lat != null && lng != null) {
+          initialPoint = LatLng(lat, lng);
+        }
+      }
+    }
+
+    final picked = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPickerPage(initialLocation: initialPoint),
+      ),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _pinnedLocation = picked;
+        _koordinatController.text =
+            "${picked.latitude.toStringAsFixed(6)}, ${picked.longitude.toStringAsFixed(6)}";
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Titik lokasi berhasil di-pin dari peta!'),
+          backgroundColor: Color(0xFF059669),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   Future<void> _pasteCoordinateFromClipboard() async {
     final data = await Clipboard.getData('text/plain');
     if (data != null && data.text != null && data.text!.isNotEmpty) {
+      final text = data.text!.trim();
+      final parts = text.split(RegExp(r'[, ]+'));
+      LatLng? newPoint;
+      if (parts.length >= 2) {
+        final lat = double.tryParse(parts[0]);
+        final lng = double.tryParse(parts[1]);
+        if (lat != null && lng != null) {
+          newPoint = LatLng(lat, lng);
+        }
+      }
       setState(() {
-        _koordinatController.text = data.text!.trim();
+        _koordinatController.text = text;
+        if (newPoint != null) {
+          _pinnedLocation = newPoint;
+        }
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -358,6 +416,8 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       request.fields['nik'] = _nikController.text.trim();
       request.fields['nama_lengkap'] = _namaLengkapController.text.trim();
       request.fields['nama_usaha'] = _namaUsahaController.text.trim();
+      request.fields['npwp'] = _npwpController.text.trim();
+      request.fields['nib'] = _nibController.text.trim();
       request.fields['jenis_retribusi_id'] = _selectedJenisRetribusiId.toString();
       request.fields['kecamatan_id'] = _selectedKecamatanId.toString();
       request.fields['desa_id'] = _selectedDesaId.toString();
@@ -396,13 +456,7 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
       if (!mounted) return;
 
       if ((response.statusCode == 200 || response.statusCode == 201) && data['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['message'] ?? 'Pengajuan berhasil dikirim! Menunggu verifikasi.'),
-            backgroundColor: const Color(0xFF059669),
-          ),
-        );
-        Navigator.pop(context, true);
+        _showSuccessPengajuanDialog(data['message'] ?? 'Pengajuan berhasil dikirim! Menunggu verifikasi.');
       } else {
         String msg = data['message'] ?? 'Gagal memproses pengajuan';
         if (data['errors'] != null) {
@@ -421,6 +475,100 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showSuccessPengajuanDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 10,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // SweetAlert style success badge
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFA7F3D0),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      size: 40,
+                      color: Color(0xFF059669),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Pengajuan Terkirim! 🎉',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message.isNotEmpty
+                      ? message
+                      : 'Permohonan pendaftaran wajib retribusi Anda berhasil dikirim dan sedang menunggu verifikasi dari admin.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      Navigator.pop(context, true);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF059669),
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shadowColor: const Color(0xFF059669).withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'SELESAI',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildStepHeader({required String step, required String title, required IconData icon}) {
@@ -595,6 +743,26 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
                             border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                           ),
                         ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _npwpController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nomor Pokok Wajib Pajak / NPWP (Opsional)',
+                            hintText: 'Contoh: 01.234.567.8-901.000',
+                            prefixIcon: Icon(Icons.receipt_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _nibController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nomor Induk Berusaha / NIB (Opsional)',
+                            hintText: 'Contoh: 1234567890123',
+                            prefixIcon: Icon(Icons.business_center_outlined),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -687,12 +855,154 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // SINGLE COMBINED COORDINATE INPUT
+                        // PIN MAPS FEATURE
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFCBD5E1)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.location_on, color: Color(0xFFDC2626), size: 20),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Titik Pin Peta (Lokasi Objek)*',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF1E293B)),
+                                        ),
+                                        Text(
+                                          'Tandai titik rumah / toko langsung di peta Kudus',
+                                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              if (_pinnedLocation != null) ...[
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: SizedBox(
+                                    height: 140,
+                                    child: FlutterMap(
+                                      options: MapOptions(
+                                        initialCenter: _pinnedLocation!,
+                                        initialZoom: 15.0,
+                                        interactionOptions: const InteractionOptions(
+                                          flags: InteractiveFlag.none,
+                                        ),
+                                      ),
+                                      children: [
+                                        TileLayer(
+                                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                          userAgentPackageName: 'com.kudus.retribusikudusapp',
+                                        ),
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: _pinnedLocation!,
+                                              width: 40,
+                                              height: 40,
+                                              alignment: Alignment.topCenter,
+                                              child: const Icon(
+                                                Icons.location_pin,
+                                                color: Color(0xFFDC2626),
+                                                size: 38,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle, color: Color(0xFF059669), size: 16),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Pin Lokasi: ${_pinnedLocation!.latitude.toStringAsFixed(6)}, ${_pinnedLocation!.longitude.toStringAsFixed(6)}',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                                        ),
+                                      ),
+                                      InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _pinnedLocation = null;
+                                            _koordinatController.clear();
+                                          });
+                                        },
+                                        child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                              ElevatedButton.icon(
+                                onPressed: _openMapPicker,
+                                icon: const Icon(Icons.map_outlined, size: 18),
+                                label: Text(
+                                  _pinnedLocation == null ? 'PILIH TITIK DI PETA (PIN MAPS)' : 'UBAH TITIK PIN LOKASI',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF059669),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  elevation: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // MANUAL COORDINATE INPUT / PASTE
                         TextField(
                           controller: _koordinatController,
                           keyboardType: TextInputType.text,
+                          onChanged: (val) {
+                            final parts = val.split(RegExp(r'[, ]+'));
+                            if (parts.length >= 2) {
+                              final lat = double.tryParse(parts[0]);
+                              final lng = double.tryParse(parts[1]);
+                              if (lat != null && lng != null) {
+                                setState(() {
+                                  _pinnedLocation = LatLng(lat, lng);
+                                });
+                              }
+                            }
+                          },
                           decoration: InputDecoration(
-                            labelText: 'Titik Koordinat Maps*',
+                            labelText: 'Titik Koordinat Latitude & Longitude*',
                             hintText: 'Contoh: -6.804825, 110.840660',
                             prefixIcon: const Icon(Icons.pin_drop, color: Color(0xFFDC2626)),
                             suffixIcon: IconButton(
@@ -700,7 +1010,7 @@ class _PengajuanScreenState extends State<PengajuanScreen> {
                               tooltip: 'Tempel dari Clipboard',
                               onPressed: _pasteCoordinateFromClipboard,
                             ),
-                            helperText: 'Cukup salin & tempel titik koordinat dari Google Maps',
+                            helperText: 'Koordinat otomatis terisi saat memilih di peta (atau tempel dari Google Maps)',
                             helperMaxLines: 2,
                             helperStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
                             border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),

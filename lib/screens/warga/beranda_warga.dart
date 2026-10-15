@@ -38,14 +38,16 @@ class _BerandaWargaState extends State<BerandaWarga> {
     },
     {
       'judul': 'Pilah Sampah dari Rumah',
-      'deskripsi': 'Pisahkan sampah organik dan anorganik demi lingkungan sehat',
+      'deskripsi':
+          'Pisahkan sampah organik dan anorganik demi lingkungan sehat',
       'color_1': '0xFF0D47A1',
       'color_2': '0xFF1976D2',
       'icon': 'delete_sweep',
     },
     {
       'judul': 'Pembayaran Digital & Transparan',
-      'deskripsi': 'Bayar retribusi kini lebih mudah melalui QRIS & Petugas Lapangan',
+      'deskripsi':
+          'Bayar retribusi kini lebih mudah melalui QRIS & Petugas Lapangan',
       'color_1': '0xFF4A148C',
       'color_2': '0xFF7B1FA2',
       'icon': 'qr_code_scanner',
@@ -77,7 +79,9 @@ class _BerandaWargaState extends State<BerandaWarga> {
 
   void _startBannerTimer() {
     _bannerTimer?.cancel();
-    final count = _banners.isNotEmpty ? _banners.length : _defaultBanners.length;
+    final count = _banners.isNotEmpty
+        ? _banners.length
+        : _defaultBanners.length;
     if (count > 1) {
       _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
         if (_pageController.hasClients) {
@@ -98,9 +102,9 @@ class _BerandaWargaState extends State<BerandaWarga> {
   Future<void> _fetchBanners() async {
     try {
       final url = Uri.parse('${ApiClient.baseUrl}/banners');
-      final response = await http.get(url, headers: ApiClient.headers).timeout(
-            const Duration(seconds: 8),
-          );
+      final response = await http
+          .get(url, headers: ApiClient.headers)
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -122,14 +126,16 @@ class _BerandaWargaState extends State<BerandaWarga> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final url = Uri.parse('${ApiClient.baseUrl}/warga/dashboard');
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              if (token != null) 'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -163,7 +169,10 @@ class _BerandaWargaState extends State<BerandaWarga> {
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 18.0,
+              vertical: 16.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -260,7 +269,7 @@ class _BerandaWargaState extends State<BerandaWarga> {
             border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -339,7 +348,7 @@ class _BerandaWargaState extends State<BerandaWarga> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.shade900.withOpacity(0.12),
+            color: Colors.green.shade900.withValues(alpha: 0.12),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -358,7 +367,11 @@ class _BerandaWargaState extends State<BerandaWarga> {
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.green.shade700,
                   child: const Center(
-                    child: Icon(Icons.recycling, size: 60, color: Colors.white70),
+                    child: Icon(
+                      Icons.recycling,
+                      size: 60,
+                      color: Colors.white70,
+                    ),
                   ),
                 ),
               )
@@ -372,8 +385,8 @@ class _BerandaWargaState extends State<BerandaWarga> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.75),
+                    Colors.black.withValues(alpha: 0.1),
+                    Colors.black.withValues(alpha: 0.75),
                   ],
                 ),
               ),
@@ -436,7 +449,7 @@ class _BerandaWargaState extends State<BerandaWarga> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: color1.withOpacity(0.2),
+            color: color1.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -450,7 +463,7 @@ class _BerandaWargaState extends State<BerandaWarga> {
             child: Icon(
               icon,
               size: 110,
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
             ),
           ),
           Padding(
@@ -460,9 +473,12 @@ class _BerandaWargaState extends State<BerandaWarga> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(
@@ -546,7 +562,9 @@ class _BerandaWargaState extends State<BerandaWarga> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const StatusPengajuanPage()),
+              MaterialPageRoute(
+                builder: (context) => const StatusPengajuanPage(),
+              ),
             );
           },
         ),
@@ -584,7 +602,7 @@ class _BerandaWargaState extends State<BerandaWarga> {
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withOpacity(0.2)),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
             ),
             child: Icon(icon, color: color, size: 28),
           ),
@@ -657,16 +675,26 @@ class _BerandaWargaState extends State<BerandaWarga> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PengajuanScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const PengajuanScreen(),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD97706),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text('Daftar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Daftar',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -731,7 +759,7 @@ class _BerandaWargaState extends State<BerandaWarga> {
         border: Border.all(color: const Color(0xFFFECDD3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.04),
+            color: Colors.red.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -747,7 +775,10 @@ class _BerandaWargaState extends State<BerandaWarga> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEF4444),
                         borderRadius: BorderRadius.circular(6),
@@ -790,7 +821,9 @@ class _BerandaWargaState extends State<BerandaWarga> {
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 0,
             ),
             child: const Text(
@@ -829,11 +862,23 @@ class _BerandaWargaState extends State<BerandaWarga> {
             ],
           ),
           const SizedBox(height: 12),
-          _buildTipRow('🗑️', 'Pilah Sampah', 'Pisahkan sampah organik sisa makanan & anorganik plastik.'),
+          _buildTipRow(
+            '🗑️',
+            'Pilah Sampah',
+            'Pisahkan sampah organik sisa makanan & anorganik plastik.',
+          ),
           const Divider(height: 16, color: Color(0xFFF1F5F9)),
-          _buildTipRow('⏰', 'Jadwal Petugas', 'Letakkan sampah di depan rumah sebelum jam 07.00 pagi.'),
+          _buildTipRow(
+            '⏰',
+            'Jadwal Petugas',
+            'Letakkan sampah di depan rumah sebelum jam 07.00 pagi.',
+          ),
           const Divider(height: 16, color: Color(0xFFF1F5F9)),
-          _buildTipRow('📞', 'Layanan Pengaduan', 'Hubungi call center PKPLH jika ada tumpukan sampah liar.'),
+          _buildTipRow(
+            '📞',
+            'Layanan Pengaduan',
+            'Hubungi call center PKPLH jika ada tumpukan sampah liar.',
+          ),
         ],
       ),
     );
@@ -860,7 +905,11 @@ class _BerandaWargaState extends State<BerandaWarga> {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.3),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF64748B),
+                  height: 1.3,
+                ),
               ),
             ],
           ),

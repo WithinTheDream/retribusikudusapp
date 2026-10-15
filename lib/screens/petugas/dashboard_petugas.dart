@@ -92,9 +92,9 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
     } catch (e) {
       if (!mounted) return;
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
     }
   }
 
@@ -104,7 +104,8 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
     // 1. Filter Desa
     if (selectedDesa != 'Semua Desa') {
       result = result.where((item) {
-        final desa = item['wajib_retribusi']?['desa']?['desa']?.toString() ?? '';
+        final desa =
+            item['wajib_retribusi']?['desa']?['desa']?.toString() ?? '';
         return desa == selectedDesa;
       }).toList();
     }
@@ -117,9 +118,14 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
         final nama = (wr['nama_lengkap'] ?? '').toString().toLowerCase();
         final nik = (wr['nik'] ?? '').toString().toLowerCase();
         final alamat = (wr['alamat'] ?? '').toString().toLowerCase();
-        final noTagihan = (item['nomor_tagihan'] ?? '').toString().toLowerCase();
+        final noTagihan = (item['nomor_tagihan'] ?? '')
+            .toString()
+            .toLowerCase();
 
-        return nama.contains(q) || nik.contains(q) || alamat.contains(q) || noTagihan.contains(q);
+        return nama.contains(q) ||
+            nik.contains(q) ||
+            alamat.contains(q) ||
+            noTagihan.contains(q);
       }).toList();
     }
 
@@ -132,7 +138,8 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
   Map<String, List<dynamic>> _groupTagihanByDesa() {
     final Map<String, List<dynamic>> grouped = {};
     for (var item in filteredTagihans) {
-      final desaName = item['wajib_retribusi']?['desa']?['desa']?.toString() ?? 'Lainnya';
+      final desaName =
+          item['wajib_retribusi']?['desa']?['desa']?.toString() ?? 'Lainnya';
       if (!grouped.containsKey(desaName)) {
         grouped[desaName] = [];
       }
@@ -151,12 +158,20 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
           children: [
             const Text(
               'Tagihan Wilayah',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Color(0xFF0F172A)),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+                color: Color(0xFF0F172A),
+              ),
             ),
             if (kecamatanName.isNotEmpty)
               Text(
                 'Kecamatan $kecamatanName',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.normal),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.normal,
+                ),
               ),
           ],
         ),
@@ -174,27 +189,29 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF059669)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF059669)),
+            )
           : !hasAssignment
-              ? _buildNoAssignmentState()
-              : tagihans.isEmpty
-                  ? _buildAllPaidState()
-                  : Column(
-                      children: [
-                        // Header Filter & Search Box
-                        _buildFilterAndSearchSection(),
+          ? _buildNoAssignmentState()
+          : tagihans.isEmpty
+          ? _buildAllPaidState()
+          : Column(
+              children: [
+                // Header Filter & Search Box
+                _buildFilterAndSearchSection(),
 
-                        // Body List Tagihan Grouped by Desa
-                        Expanded(
-                          child: RefreshIndicator(
-                            onRefresh: fetchTagihan,
-                            child: filteredTagihans.isEmpty
-                                ? _buildEmptySearchResult()
-                                : _buildGroupedTagihanList(),
-                          ),
-                        ),
-                      ],
-                    ),
+                // Body List Tagihan Grouped by Desa
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: fetchTagihan,
+                    child: filteredTagihans.isEmpty
+                        ? _buildEmptySearchResult()
+                        : _buildGroupedTagihanList(),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -217,7 +234,11 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.location_on, color: Color(0xFF059669), size: 18),
+                const Icon(
+                  Icons.location_on,
+                  color: Color(0xFF059669),
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -230,14 +251,21 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF059669),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${filteredTagihans.length} Tagihan',
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -254,11 +282,22 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
             },
             decoration: InputDecoration(
               hintText: 'Cari nama warga, NIK, alamat...',
-              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-              prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
+              hintStyle: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF94A3B8),
+              ),
+              prefixIcon: const Icon(
+                Icons.search,
+                size: 20,
+                color: Color(0xFF64748B),
+              ),
               suffixIcon: searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18, color: Color(0xFF94A3B8)),
+                      icon: const Icon(
+                        Icons.clear,
+                        size: 18,
+                        color: Color(0xFF94A3B8),
+                      ),
                       onPressed: () {
                         _searchController.clear();
                         searchQuery = '';
@@ -266,7 +305,10 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                       },
                     )
                   : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
               border: OutlineInputBorder(
@@ -292,7 +334,11 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
               const SizedBox(width: 8),
               const Text(
                 'Filter Desa:',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF475569),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -308,8 +354,15 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                     child: DropdownButton<String>(
                       value: selectedDesa,
                       isExpanded: true,
-                      icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF059669)),
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B), fontWeight: FontWeight.w500),
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: Color(0xFF059669),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w500,
+                      ),
                       items: availableDesas.map((desa) {
                         return DropdownMenuItem<String>(
                           value: desa,
@@ -352,7 +405,10 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF059669),
                       borderRadius: BorderRadius.circular(8),
@@ -369,7 +425,11 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                   const SizedBox(width: 8),
                   Text(
                     '(${listForDesa.length} Wajib Retribusi)',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -402,7 +462,7 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -427,7 +487,10 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEE2E2),
                     borderRadius: BorderRadius.circular(6),
@@ -446,12 +509,19 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.home_outlined, size: 14, color: Color(0xFF64748B)),
+                const Icon(
+                  Icons.home_outlined,
+                  size: 14,
+                  color: Color(0xFF64748B),
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '$alamat ${rt.isNotEmpty ? "RT $rt " : ""}${rw.isNotEmpty ? "RW $rw" : ""}',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
                 ),
               ],
@@ -467,7 +537,10 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                   children: [
                     Text(
                       'Periode $bulan/$tahun',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF94A3B8),
+                      ),
                     ),
                     Text(
                       AppFormatters.formatRupiah(nominal),
@@ -484,7 +557,8 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetailTagihanPetugasPage(tagihan: tagihan),
+                        builder: (context) =>
+                            DetailTagihanPetugasPage(tagihan: tagihan),
                       ),
                     );
                     if (result == true) {
@@ -495,11 +569,19 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF059669),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     elevation: 0,
                   ),
-                  child: const Text('Detail & Bayar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Detail & Bayar',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -521,7 +603,11 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
             SizedBox(height: 12),
             Text(
               'Tidak Ada Tagihan yang Cocok',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF334155),
+              ),
             ),
             SizedBox(height: 4),
             Text(
@@ -549,7 +635,10 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
               if (kecamatanName.isNotEmpty)
                 Container(
                   margin: const EdgeInsets.only(bottom: 24),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFECFDF5),
                     borderRadius: BorderRadius.circular(12),
@@ -558,7 +647,11 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.location_on, color: Color(0xFF059669), size: 18),
+                      const Icon(
+                        Icons.location_on,
+                        color: Color(0xFF059669),
+                        size: 18,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Wilayah Penugasan: Kec. $kecamatanName',
@@ -579,18 +672,30 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                   shape: BoxShape.circle,
                   border: Border.all(color: const Color(0xFFA7F3D0), width: 2),
                 ),
-                child: const Icon(Icons.check_circle_outline, size: 64, color: Color(0xFF059669)),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  size: 64,
+                  color: Color(0xFF059669),
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Semua Tagihan Lunas!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               const Text(
                 'Tidak ada tagihan yang tertunggak di wilayah penugasan Anda saat ini.',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.4),
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 14,
+                  height: 1.4,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -604,8 +709,13 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF059669),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ],
@@ -622,11 +732,19 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.assignment_late_outlined, size: 64, color: Color(0xFFD97706)),
+            const Icon(
+              Icons.assignment_late_outlined,
+              size: 64,
+              color: Color(0xFFD97706),
+            ),
             const SizedBox(height: 16),
             const Text(
               'Belum Ada Penugasan Wilayah',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -646,8 +764,13 @@ class _DashboardPetugasState extends State<DashboardPetugas> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF059669),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ],

@@ -22,8 +22,18 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
 
   final List<String> _namaBulan = [
     '',
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
   ];
 
   String _getBulanText(dynamic bulan) {
@@ -37,18 +47,25 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
     final lat = wr['latitude'] ?? wr['lat'];
     final lng = wr['longitude'] ?? wr['lokasi_long'];
 
-    if (lat == null || lng == null || lat.toString().isEmpty || lng.toString().isEmpty) {
+    if (lat == null ||
+        lng == null ||
+        lat.toString().isEmpty ||
+        lng.toString().isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('⚠️ Titik koordinat Latitude & Longitude belum terdata untuk warga ini.'),
+          content: Text(
+            '⚠️ Titik koordinat Latitude & Longitude belum terdata untuk warga ini.',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    final Uri googleMapsUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    final Uri googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
 
     try {
       if (await canLaunchUrl(googleMapsUrl)) {
@@ -56,14 +73,16 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membuka aplikasi Google Maps.')),
+          const SnackBar(
+            content: Text('Tidak dapat membuka aplikasi Google Maps.'),
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal membuka peta: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal membuka peta: $e')));
     }
   }
 
@@ -81,7 +100,10 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -131,7 +153,9 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
         return;
       } else {
         // Respons error dari server
-        throw Exception(responseData['message'] ?? 'Gagal memproses pembayaran di server.');
+        throw Exception(
+          responseData['message'] ?? 'Gagal memproses pembayaran di server.',
+        );
       }
     } catch (_) {
       // JIKA TERJADI KESALAHAN JARINGAN / OFFLINE / TIMEOUT:
@@ -150,7 +174,9 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('⚡ Pembayaran Disimpan Offline (Akan otomatis disinkronkan saat ada sinyal)'),
+            content: Text(
+              '⚡ Pembayaran Disimpan Offline (Akan otomatis disinkronkan saat ada sinyal)',
+            ),
             backgroundColor: Color(0xFFD97706),
             duration: Duration(seconds: 4),
           ),
@@ -188,7 +214,8 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
     final bulanName = _getBulanText(widget.tagihan['bulan']);
     final tahun = widget.tagihan['tahun'] ?? '';
 
-    final hasCoordinates = (wr['latitude'] != null && wr['latitude'].toString().isNotEmpty) ||
+    final hasCoordinates =
+        (wr['latitude'] != null && wr['latitude'].toString().isNotEmpty) ||
         (wr['lat'] != null && wr['lat'].toString().isNotEmpty);
 
     return Scaffold(
@@ -196,7 +223,11 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
       appBar: AppBar(
         title: const Text(
           'Detail Tagihan Warga',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Color(0xFF0F172A)),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+            color: Color(0xFF0F172A),
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -218,7 +249,7 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF059669).withOpacity(0.25),
+                    color: const Color(0xFF059669).withValues(alpha: 0.25),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -231,17 +262,27 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                     children: [
                       Text(
                         'Tagihan $bulanName $tahun',
-                        style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.9)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF87171),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
                           'Belum Bayar',
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -259,7 +300,10 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                   const SizedBox(height: 6),
                   Text(
                     'No: $noTagihan',
-                    style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.75)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
                   ),
                 ],
               ),
@@ -279,11 +323,19 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                 children: [
                   Row(
                     children: const [
-                      Icon(Icons.person_pin, color: Color(0xFF059669), size: 22),
+                      Icon(
+                        Icons.person_pin,
+                        color: Color(0xFF059669),
+                        size: 22,
+                      ),
                       SizedBox(width: 8),
                       Text(
                         'Data Wajib Retribusi',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                     ],
                   ),
@@ -293,9 +345,17 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                   _buildDetailRow('No. WhatsApp / HP', noHp),
                   _buildDetailRow('Kecamatan', kec),
                   _buildDetailRow('Desa / Kelurahan', desa),
-                  _buildDetailRow('Alamat Lengkap', '$alamat ${rt.isNotEmpty ? "RT $rt " : ""}${rw.isNotEmpty ? "RW $rw" : ""}'),
-                  _buildDetailRow('Titik Koordinat', hasCoordinates ? '${wr['latitude'] ?? wr['lat']}, ${wr['longitude'] ?? wr['lokasi_long']}' : 'Belum terdata'),
-                  
+                  _buildDetailRow(
+                    'Alamat Lengkap',
+                    '$alamat ${rt.isNotEmpty ? "RT $rt " : ""}${rw.isNotEmpty ? "RW $rw" : ""}',
+                  ),
+                  _buildDetailRow(
+                    'Titik Koordinat',
+                    hasCoordinates
+                        ? '${wr['latitude'] ?? wr['lat']}, ${wr['longitude'] ?? wr['lokasi_long']}'
+                        : 'Belum terdata',
+                  ),
+
                   const SizedBox(height: 14),
 
                   // Tombol Peta Google Maps
@@ -303,18 +363,30 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () => _openGoogleMaps(wr),
-                      icon: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
+                      icon: const Icon(
+                        Icons.navigation_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                       label: Text(
                         hasCoordinates
                             ? 'Navigasi Maps ke Koordinat 📍'
                             : 'Titik Koordinat Belum Terdata ⚠️',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: hasCoordinates ? const Color(0xFF2563EB) : const Color(0xFF94A3B8),
+                        backgroundColor: hasCoordinates
+                            ? const Color(0xFF2563EB)
+                            : const Color(0xFF94A3B8),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         elevation: 0,
                       ),
                     ),
@@ -331,18 +403,26 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : const Icon(Icons.payments_outlined, size: 22),
               label: Text(
                 isProcessing ? 'Memproses...' : 'Terima Pembayaran Tunai',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF059669),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 2,
               ),
             ),
@@ -366,7 +446,10 @@ class _DetailTagihanPetugasPageState extends State<DetailTagihanPetugasPage> {
               style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
           ),
-          const Text(': ', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          const Text(
+            ': ',
+            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          ),
           Expanded(
             child: Text(
               value,
